@@ -12,6 +12,12 @@ func ThrowException(message string) {
 	os.Exit(1)
 }
 
+func ExceptIfNotOk(message string, ok bool) {
+	if !ok {
+		ThrowException(message)
+	}
+}
+
 func Warn(message string) {
 	fmt.Fprintf(os.Stderr, "[WARN] "+message)
 }

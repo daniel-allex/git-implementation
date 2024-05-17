@@ -13,12 +13,12 @@ func ZlibDecompress(compressed string) string {
 	r, err := zlib.NewReader(data)
 	ExceptIfError("Failed to create zlib decompression reader", err)
 
-	defer r.Close()
+	out, err := io.ReadAll(r)
+	ExceptIfError("Failed to read all during zlib decompression", err)
 
-	var out bytes.Buffer
-	_, err = io.Copy(&out, r)
-
-	return out.String()
+	err = r.Close()
+	ExceptIfError("Failed to close zlib reader", err)
+	return string(out)
 }
 
 func ZlibCompress(s string) string {

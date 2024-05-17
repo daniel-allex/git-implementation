@@ -15,6 +15,8 @@ func ParseArgs() FlagArgs {
 			continue
 		} else if i == 1 {
 			res.Command = arg
+		} else if len(arg) > 1 && arg[:2] == "--" {
+			res.Flags.Add(arg[2:])
 		} else if arg[0] == '-' {
 			res.Flags.Add(arg[1:])
 		} else {
