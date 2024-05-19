@@ -12,31 +12,65 @@ func gitInit() {
 		err := os.MkdirAll(dir, 0755)
 		WarnIfError("Could not create directory", err)
 	}
-	WriteFile("ref: refs/heads/main\n", ".git/HEAD")
+	err := WriteFile("ref: refs/heads/main\n", ".git/HEAD")
+	if err != nil {
+		fmt.Println("failed to initialize .git: %w", err)
+	}
 	Log("Initialized git directory")
 }
 
 func gitPrintContent(args FlagArgs) {
-	fmt.Print(contentFromSha1(args.Arg))
+	content, err := contentFromSha1(args.Arg)
+	if err != nil {
+		fmt.Println("failed to print blob content: %w", err)
+		return
+	}
+
+	fmt.Print(content)
+}
+
+func gitTreeContent(args FlagArgs) (string, error) {
+	if args.Flags.Contains("name-only") {
+		return outputTreeNamesFromSha1(args.Arg)
+	} else {
+		return outputTreeInfoFromSha1(args.Arg)
+	}
 }
 
 func gitPrintTree(args FlagArgs) {
-	content := ""
-	if args.Flags.Contains("name-only") {
-		content = outputTreeNamesFromSha1(args.Arg)
-	} else {
-		content = outputTreeInfoFromSha1(args.Arg)
+	content, err := gitTreeContent(args)
+	if err != nil {
+		fmt.Println("failed to print tree: %w", err)
+		return
 	}
-
 	fmt.Println(content)
+}
+
+func gitWriteTree(args FlagArgs) {
+	sha1, err := WriteTree(".")
+	if err != nil {
+		fmt.Println("failed to write tree: %w", err)
+		return
+	}
+	fmt.Println(sha1)
 }
 
 func hashObject(args FlagArgs) {
 	if args.Flags.Contains("w") {
-		WriteGitBlobFromFile(args.Arg)
+		err := WriteGitBlobFromFile(args.Arg)
+		if err != nil {
+			fmt.Println("failed to hash object: %w", err)
+			return
+		}
 	}
 
-	fmt.Println(gitBlobSha1FromFile(args.Arg))
+	sha1, err := gitBlobSha1FromFile(args.Arg)
+	if err != nil {
+		fmt.Println("failed to hash object: %w", err)
+		return
+	}
+
+	fmt.Println(sha1)
 }
 
 // Usage: your_git.sh <command> <arg1> <arg2> ...
@@ -51,9 +85,11 @@ func main() {
 		hashObject(args)
 	case "ls-tree":
 		gitPrintTree(args)
+	case "write-tree":
+		gitWriteTree(args)
 	case "cat-file":
 		gitPrintContent(args)
 	default:
-		ThrowException("Unknown command " + args.Command + "\n")
+		fmt.Println("Unknown command " + args.Command + "\n")
 	}
 }

@@ -8,28 +8,42 @@ import (
 	"io"
 )
 
-func ZlibDecompress(compressed string) string {
+func ZlibDecompress(compressed string) (string, error) {
 	data := bytes.NewReader([]byte(compressed))
 	r, err := zlib.NewReader(data)
-	ExceptIfError("Failed to create zlib decompression reader", err)
+	if err != nil {
+		return "", err
+	}
 
 	out, err := io.ReadAll(r)
-	ExceptIfError("Failed to read all during zlib decompression", err)
+	if err != nil {
+		return "", err
+	}
 
 	err = r.Close()
-	ExceptIfError("Failed to close zlib reader", err)
-	return string(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(out), nil
 }
 
-func ZlibCompress(s string) string {
+func ZlibCompress(s string) (string, error) {
 	var b bytes.Buffer
 	w := zlib.NewWriter(&b)
 	_, err := w.Write([]byte(s))
-	ExceptIfError("Failed to write using zlib compression writer", err)
+
+	if err != nil {
+		return "", err
+	}
 
 	err = w.Close()
-	ExceptIfError("Failed to close zlib writer", err)
-	return b.String()
+
+	if err != nil {
+		return "", err
+	}
+
+	return b.String(), nil
 }
 
 func Sha1Hash(s string) string {
